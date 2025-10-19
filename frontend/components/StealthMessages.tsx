@@ -6,6 +6,7 @@ import { useAccount, useSendTransaction } from 'wagmi';
 interface StealthMessagesProps {
     bobStealthSequence: Array<{ nonce: number; address: string }>;
     aliceStealthSequence: Array<{ nonce: number; address: string }>;
+    currentUser: 'bob' | 'alice';
 }
 
 interface BalanceData {
@@ -16,7 +17,7 @@ interface BalanceData {
     type: 'bob' | 'alice';
 }
 
-export default function StealthMessages({ bobStealthSequence, aliceStealthSequence }: StealthMessagesProps) {
+export default function StealthMessages({ bobStealthSequence, aliceStealthSequence, currentUser }: StealthMessagesProps) {
     const [balanceData, setBalanceData] = useState<BalanceData[]>([]);
     const [isCheckingBalances, setIsCheckingBalances] = useState(false);
     const [showModal, setShowModal] = useState(false);
@@ -85,7 +86,7 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
 
         try {
             await sendTransaction({
-                to: selectedAddress.address,
+                to: selectedAddress.address as `0x${string}`,
                 value: BigInt(calculatedAmount),
             });
 
@@ -235,6 +236,17 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
             <h2 className="text-2xl font-bold mb-6 text-gray-900">
                 Stealth Message Checker
             </h2>
+
+            {/* User Role Selector */}
+            <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    You are currently: <span className="font-bold text-blue-800">{currentUser === 'bob' ? 'Bob' : 'Alice'}</span>
+                </label>
+                <p className="text-xs text-gray-600">
+                    You can only send messages to your own addresses (you own the private keys)
+                </p>
+            </div>
+
             <p className="text-sm text-gray-700 mb-6">
                 Checking balances on Base Sepolia network (https://base-sepolia.blockscout.com)
             </p>
@@ -339,7 +351,7 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
                                                     }`}>
                                                     {item.type === 'bob' ? 'Bob' : 'Alice'} Nonce {item.nonce}
                                                 </span>
-                                                {!item.message && (
+                                                {!item.message && item.type === currentUser && (
                                                     <button
                                                         onClick={() => openSendModal(item.address, item.nonce, item.type)}
                                                         className="px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors"
@@ -374,88 +386,85 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                 <h4 className="font-medium text-blue-800 mb-2">How Stealth Messaging Works:</h4>
                 <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• <strong>Alice sends ETH</strong> to her own stealth addresses on Base Sepolia with encoded messages</li>
+                    <li>• <strong>You send ETH</strong> to your own stealth addresses with encoded messages</li>
                     <li>• <strong>Last 12 digits</strong> of the balance amount encode the message (4 characters max)</li>
-                    <li>• <strong>Bob checks balances</strong> sequentially until finding a zero balance (stops checking)</li>
-                    <li>• <strong>Non-zero balances</strong> indicate messages from Alice</li>
-                    <li>• <strong>Messages are decoded</strong> from the balance amount's last 12 digits</li>
+                    <li>• <strong>The other party checks</strong> your addresses sequentially until finding a zero balance</li>
+                    <li>• <strong>Non-zero balances</strong> indicate messages you've sent to yourself</li>
+                    <li>• <strong>Only you can access</strong> the private keys to retrieve your funds</li>
                     <li>• <strong>Sequential checking</strong> stops at first zero balance for efficiency</li>
                 </ul>
             </div>
-        </div>
 
-        {/* Send Message Modal */ }
-    {
-        showModal && selectedAddress && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4">
-                        Send Message to {selectedAddress.type === 'bob' ? 'Bob' : 'Alice'} Nonce {selectedAddress.nonce}
-                    </h3>
+            {/* Send Message Modal */}
+            {showModal && selectedAddress && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                        <h3 className="text-xl font-bold text-gray-900 mb-4">
+                            Send Message to {selectedAddress.type === 'bob' ? 'Bob' : 'Alice'} Nonce {selectedAddress.nonce}
+                        </h3>
 
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Message (max 4 characters)
-                            </label>
-                            <input
-                                type="text"
-                                value={messageText}
-                                onChange={(e) => setMessageText(e.target.value)}
-                                placeholder="Enter message"
-                                maxLength={4}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        <div className="flex gap-2">
-                            <button
-                                onClick={calculateMessageAmount}
-                                disabled={!messageText.trim()}
-                                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Calculate Amount
-                            </button>
-                        </div>
-
-                        {calculatedAmount && (
-                            <div className="p-4 bg-green-50 rounded-lg">
-                                <h4 className="font-medium text-green-800 mb-2">Amount to Send:</h4>
-                                <p className="text-sm font-mono text-green-700">
-                                    {calculatedAmount} wei
-                                </p>
-                                <p className="text-sm text-green-600">
-                                    {(parseInt(calculatedAmount) / 1e18).toFixed(18)} ETH
-                                </p>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Message (max 4 characters)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={messageText}
+                                    onChange={(e) => setMessageText(e.target.value)}
+                                    placeholder="Enter message"
+                                    maxLength={4}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
                             </div>
-                        )}
 
-                        <div className="flex gap-2">
-                            <button
-                                onClick={sendMessage}
-                                disabled={!calculatedAmount || !isConnected || isSending}
-                                className="flex-1 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {isSending ? 'Sending...' : 'Send Transaction'}
-                            </button>
-                            <button
-                                onClick={() => setShowModal(false)}
-                                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-                            >
-                                Cancel
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={calculateMessageAmount}
+                                    disabled={!messageText.trim()}
+                                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Calculate Amount
+                                </button>
+                            </div>
+
+                            {calculatedAmount && (
+                                <div className="p-4 bg-green-50 rounded-lg">
+                                    <h4 className="font-medium text-green-800 mb-2">Amount to Send:</h4>
+                                    <p className="text-sm font-mono text-green-700">
+                                        {calculatedAmount} wei
+                                    </p>
+                                    <p className="text-sm text-green-600">
+                                        {(Number(calculatedAmount) / 1e18).toFixed(18)} ETH
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={sendMessage}
+                                    disabled={!calculatedAmount || !isConnected || isSending}
+                                    className="flex-1 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isSending ? 'Sending...' : 'Send Transaction'}
+                                </button>
+                                <button
+                                    onClick={() => setShowModal(false)}
+                                    className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+
+                            {!isConnected && (
+                                <p className="text-sm text-red-600">
+                                    Please connect your wallet to send transactions
+                                </p>
+                            )}
                         </div>
-
-                        {!isConnected && (
-                            <p className="text-sm text-red-600">
-                                Please connect your wallet to send transactions
-                            </p>
-                        )}
                     </div>
                 </div>
-            </div>
-        )
-    }
-    </div >
+            )}
+        </div>
     );
 }
