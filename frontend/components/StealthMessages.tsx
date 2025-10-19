@@ -49,24 +49,31 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
             // Generate 100 nonces for each sequence
             const sequenceCount = 100;
 
-            // Generate Bob's sequence
+            // Convert recipient public key to Uint8Array
+            const recipientPubKeyBytes = new Uint8Array(
+                recipientPubKey.startsWith('0x')
+                    ? recipientPubKey.slice(2).match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
+                    : recipientPubKey.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
+            );
+
+            // Generate Bob's sequence (using recipient's public key)
             const bobSequence = [];
             for (let i = 0; i < sequenceCount; i++) {
                 const stealthAddress = StealthCrypto.generateStealthAddress(
                     sharedSecret,
-                    generatedWallet.publicKey,
+                    recipientPubKeyBytes,
                     i
                 );
                 bobSequence.push({ nonce: i, address: stealthAddress });
             }
             setAutoBobSequence(bobSequence);
 
-            // Generate Alice's sequence
+            // Generate Alice's sequence (using generated wallet's public key)
             const aliceSequence = [];
             for (let i = 0; i < sequenceCount; i++) {
                 const stealthAddress = StealthCrypto.generateStealthAddress(
                     sharedSecret,
-                    recipientPubKey,
+                    generatedWallet.publicKey,
                     i
                 );
                 aliceSequence.push({ nonce: i, address: stealthAddress });
@@ -90,7 +97,7 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
     }, [generatedWallet, sharedSecret, recipientPubKey, bobStealthSequence.length, aliceStealthSequence.length]);
 
     // Encode message in the last 12 digits of a balance amount
-    const encodeMessageInBalance = (message: string): string => {
+    const encodeMessageInBalance = (message: string, stealthAddress: string): string => {
         try {
             // Take only first 4 characters to fit in 12 digits
             const truncatedMessage = message.slice(0, 4);
@@ -108,8 +115,18 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
             // Combine into 12-digit string
             const encodedDigits = asciiCodes.join('').padEnd(12, '0');
 
-            // Use the encoded digits directly as the wei amount
-            // This ensures the amount is small (12 digits max = 999,999,999,999 wei = ~0.000001 ETH)
+            // XOR encrypt the digits using shared secret + stealth address
+            // This makes the same message produce different amounts for different addresses
+            if (sharedSecret && stealthAddress) {
+                const encryptedDigits = StealthCrypto.xorEncryptDigits(
+                    encodedDigits,
+                    sharedSecret.secret,
+                    stealthAddress
+                );
+                return encryptedDigits;
+            }
+
+            // Fallback to unencrypted if no shared secret
             return encodedDigits;
         } catch (error) {
             console.error('Error encoding message:', error);
@@ -118,17 +135,27 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
     };
 
     // Decode message from balance amount
-    const decodeMessageFromBalance = (balance: string): string => {
+    const decodeMessageFromBalance = (balance: string, stealthAddress: string): string => {
         // Extract last 12 digits
         const last12Digits = balance.slice(-12);
 
+        // XOR decrypt the digits using shared secret + stealth address
+        let decryptedDigits = last12Digits;
+        if (sharedSecret && stealthAddress) {
+            decryptedDigits = StealthCrypto.xorDecryptDigits(
+                last12Digits,
+                sharedSecret.secret,
+                stealthAddress
+            );
+        }
+
         // Check if this is a concatenated message (has sequence info)
-        const sequence = parseInt(last12Digits.slice(0, 3));
-        const total = parseInt(last12Digits.slice(3, 6));
+        const sequence = parseInt(decryptedDigits.slice(0, 3));
+        const total = parseInt(decryptedDigits.slice(3, 6));
 
         if (sequence > 0 && total > 0 && sequence <= total) {
             // This is a concatenated message chunk
-            const messagePart = last12Digits.slice(6, 12);
+            const messagePart = decryptedDigits.slice(6, 12);
             const asciiCodes = [];
             for (let i = 0; i < 6; i += 3) {
                 const code = parseInt(messagePart.slice(i, i + 3));
@@ -142,7 +169,7 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
             // Regular single message
             const asciiCodes = [];
             for (let i = 0; i < 12; i += 3) {
-                const code = parseInt(last12Digits.slice(i, i + 3));
+                const code = parseInt(decryptedDigits.slice(i, i + 3));
                 if (code > 0 && code < 128) { // Valid ASCII range
                     asciiCodes.push(code);
                 }
@@ -165,8 +192,8 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
 
     // Calculate amount for message
     const calculateMessageAmount = () => {
-        if (!messageText.trim()) return;
-        const amount = encodeMessageInBalance(messageText);
+        if (!messageText.trim() || !selectedAddress) return;
+        const amount = encodeMessageInBalance(messageText, selectedAddress.address);
         setCalculatedAmount(amount);
     };
 
@@ -207,7 +234,7 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
         for (const bobAddress of bobSequence) {
             try {
                 const balance = await getBalanceFromBaseSepolia(bobAddress.address);
-                const decodedMessage = balance !== '0' ? decodeMessageFromBalance(balance) : undefined;
+                const decodedMessage = balance !== '0' ? decodeMessageFromBalance(balance, bobAddress.address) : undefined;
 
                 balanceResults.push({
                     nonce: bobAddress.nonce,
@@ -239,7 +266,7 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
         for (const aliceAddress of aliceSequence) {
             try {
                 const balance = await getBalanceFromBaseSepolia(aliceAddress.address);
-                const decodedMessage = balance !== '0' ? decodeMessageFromBalance(balance) : undefined;
+                const decodedMessage = balance !== '0' ? decodeMessageFromBalance(balance, aliceAddress.address) : undefined;
 
                 balanceResults.push({
                     nonce: aliceAddress.nonce,

@@ -168,6 +168,42 @@ export class StealthCrypto {
     }
 
     /**
+     * XOR encrypt a 12-digit string using shared secret and stealth address as factors
+     * This ensures the same message produces different amounts for different addresses
+     * Works by treating the 12-digit string as 4 sets of 3-digit ASCII codes
+     */
+    static xorEncryptDigits(digits: string, sharedSecret: Uint8Array, stealthAddress: string): string {
+        // Create a deterministic key from shared secret + stealth address
+        const addressBytes = new Uint8Array(
+            stealthAddress.slice(2).match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []
+        );
+        const combined = new Uint8Array(sharedSecret.length + addressBytes.length);
+        combined.set(sharedSecret);
+        combined.set(addressBytes, sharedSecret.length);
+        const key = sha256(combined);
+
+        // XOR each 3-digit ASCII code with corresponding key bytes
+        let encrypted = '';
+        for (let i = 0; i < 12; i += 3) {
+            const asciiCode = parseInt(digits.slice(i, i + 3));
+            const keyByte = key[Math.floor(i / 3)] ^ key[Math.floor(i / 3) + 4];
+            const xorResult = asciiCode ^ keyByte;
+            encrypted += xorResult.toString().padStart(3, '0');
+        }
+
+        return encrypted;
+    }
+
+    /**
+     * XOR decrypt a 12-digit string using shared secret and stealth address as factors
+     * Uses the same process as encryption (XOR is reversible)
+     */
+    static xorDecryptDigits(encryptedDigits: string, sharedSecret: Uint8Array, stealthAddress: string): string {
+        // XOR encryption is symmetric, so decryption is the same operation
+        return this.xorEncryptDigits(encryptedDigits, sharedSecret, stealthAddress);
+    }
+
+    /**
      * Generate stealth address from shared key, public key, and nonce
      * Formula: h(sharedkey, pubkey, nonce) as private key
      */
