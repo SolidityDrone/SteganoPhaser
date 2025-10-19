@@ -12,6 +12,60 @@ interface ECDHExchangeProps {
 export default function ECDHExchange({ generatedWallet, onSharedSecretGenerated, onRecipientPubKeySet }: ECDHExchangeProps) {
     const [recipientPubKey, setRecipientPubKey] = useState<string>('');
     const [sharedSecret, setSharedSecret] = useState<SharedSecret | null>(null);
+    const [inputType, setInputType] = useState<'pubkey' | 'ens'>('pubkey');
+    const [ensName, setEnsName] = useState<string>('');
+    const [isResolving, setIsResolving] = useState<boolean>(false);
+    const [resolveError, setResolveError] = useState<string>('');
+
+    // Resolve ENS name to get public key from description text record
+    const resolveENSName = async () => {
+        if (!ensName.trim()) return;
+
+        setIsResolving(true);
+        setResolveError('');
+
+        try {
+            // Make API call to our internal API route
+            const response = await fetch(`/api/namestone?domain=${ensName}&text_records=1`);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('ENS API response:', data);
+
+            if (data.length === 0) {
+                throw new Error('No ENS name found');
+            }
+
+            const nameData = data[0];
+            const description = nameData.text_records?.description;
+            console.log('Description text record:', description);
+
+            if (!description) {
+                throw new Error('No description text record found');
+            }
+
+            // Extract public key from description
+            const pubKey = description.trim();
+
+            // Validate that it looks like a public key (hex string)
+            if (!/^0x[a-fA-F0-9]{64}$/.test(pubKey)) {
+                throw new Error('Invalid public key format in description');
+            }
+
+            setRecipientPubKey(pubKey);
+            onRecipientPubKeySet(pubKey);
+
+        } catch (error) {
+            console.error('ENS resolution error:', error);
+            setResolveError(error instanceof Error ? error.message : 'Failed to resolve ENS name');
+        } finally {
+            setIsResolving(false);
+        }
+    };
 
     // Generate shared secret via ECDH
     const generateSharedSecret = () => {
@@ -40,27 +94,99 @@ export default function ECDHExchange({ generatedWallet, onSharedSecretGenerated,
                 ECDH Key Exchange
             </h2>
 
-            {/* Recipient Public Key Input */}
-            <div className="mb-6">
+            {/* Input Type Selection */}
+            <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-900 mb-2">
-                    Recipient Public Key
+                    Input Method
                 </label>
                 <div className="flex gap-2">
-                    <input
-                        type="text"
-                        value={recipientPubKey}
-                        onChange={(e) => setRecipientPubKey(e.target.value)}
-                        placeholder="Enter recipient's public key (hex format)"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
                     <button
-                        onClick={generateSharedSecret}
-                        disabled={!generatedWallet || !recipientPubKey}
-                        className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => setInputType('pubkey')}
+                        className={`px-4 py-2 rounded-md transition-colors ${inputType === 'pubkey'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
                     >
-                        Generate Shared Secret
+                        Public Key
+                    </button>
+                    <button
+                        onClick={() => setInputType('ens')}
+                        className={`px-4 py-2 rounded-md transition-colors ${inputType === 'ens'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                    >
+                        ENS Name
                     </button>
                 </div>
+            </div>
+
+            {/* Recipient Input */}
+            <div className="mb-6">
+                {inputType === 'pubkey' ? (
+                    <>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                            Recipient Public Key
+                        </label>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={recipientPubKey}
+                                onChange={(e) => setRecipientPubKey(e.target.value)}
+                                placeholder="Enter recipient's public key (hex format)"
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                            />
+                            <button
+                                onClick={generateSharedSecret}
+                                disabled={!generatedWallet || !recipientPubKey}
+                                className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Generate Shared Secret
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                            ENS Name
+                        </label>
+                        <div className="space-y-2">
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={ensName}
+                                    onChange={(e) => setEnsName(e.target.value)}
+                                    placeholder="Enter ENS name (e.g., alice.eth)"
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                                />
+                                <button
+                                    onClick={resolveENSName}
+                                    disabled={!ensName.trim() || isResolving}
+                                    className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isResolving ? 'Resolving...' : 'Resolve ENS'}
+                                </button>
+                                {recipientPubKey && (
+                                    <button
+                                        onClick={generateSharedSecret}
+                                        disabled={!generatedWallet}
+                                        className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Generate Shared Secret
+                                    </button>
+                                )}
+                            </div>
+                            {resolveError && (
+                                <p className="text-sm text-red-600">{resolveError}</p>
+                            )}
+                            {recipientPubKey && (
+                                <p className="text-sm text-green-600">
+                                    ✓ ENS resolved successfully!
+                                </p>
+                            )}
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Your Public Key Display */}
