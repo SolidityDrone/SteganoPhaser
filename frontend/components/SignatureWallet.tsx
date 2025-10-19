@@ -56,14 +56,14 @@ export default function SignatureWallet({ onWalletGenerated }: SignatureWalletPr
             <h2 className="text-2xl font-semibold mb-6 text-gray-800">
                 Generate Wallet from Signature
             </h2>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-gray-800 mb-6">
                 Sign the steganographic message to generate your embedded wallet
             </p>
 
             {/* Connection Status */}
             <div className="mb-6 p-4 bg-gray-100 rounded-lg">
                 <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-800">
                         Status: {isConnected ? `Connected as ${address}` : 'Not connected'}
                     </p>
                     <AppKitButton />
@@ -74,14 +74,14 @@ export default function SignatureWallet({ onWalletGenerated }: SignatureWalletPr
             {/* Fixed Message Display */}
             <div className="mb-6 p-4 bg-blue-50 rounded-lg">
                 <h3 className="font-semibold text-gray-800 mb-2">Message to Sign:</h3>
-                <p className="text-gray-700 font-mono text-sm break-all">
+                <p className="text-gray-900 font-mono text-sm break-all">
                     "{FIXED_MESSAGE}"
                 </p>
             </div>
 
             {/* Signature Section */}
             <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                     Signature
                 </label>
                 <div className="flex gap-2">
@@ -109,7 +109,7 @@ export default function SignatureWallet({ onWalletGenerated }: SignatureWalletPr
                 </div>
                 {signature && (
                     <div className="mt-2 p-3 bg-green-50 rounded-md">
-                        <p className="text-sm text-gray-600 mb-1">Signature:</p>
+                        <p className="text-sm text-gray-800 mb-1">Signature:</p>
                         <p className="font-mono text-xs break-all text-green-800">{signature}</p>
                     </div>
                 )}
@@ -125,7 +125,7 @@ export default function SignatureWallet({ onWalletGenerated }: SignatureWalletPr
                     {isGenerating ? 'Generating...' : 'Generate Wallet from Signature'}
                 </button>
                 {!signature && (
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-gray-700 mt-2">
                         Please sign the message first to generate your wallet
                     </p>
                 )}
@@ -138,14 +138,14 @@ export default function SignatureWallet({ onWalletGenerated }: SignatureWalletPr
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-4 bg-gray-50 rounded-lg">
-                            <h4 className="font-medium text-gray-700 mb-2">Address</h4>
+                            <h4 className="font-medium text-gray-900 mb-2">Address</h4>
                             <p className="font-mono text-sm break-all text-gray-800">
                                 {generatedWallet.address}
                             </p>
                         </div>
 
                         <div className="p-4 bg-gray-50 rounded-lg">
-                            <h4 className="font-medium text-gray-700 mb-2">Public Key</h4>
+                            <h4 className="font-medium text-gray-900 mb-2">Public Key</h4>
                             <p className="font-mono text-xs break-all text-gray-800">
                                 0x{Array.from(generatedWallet.publicKey).map(b => b.toString(16).padStart(2, '0')).join('')}
                             </p>

@@ -30,19 +30,33 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
 
     // Encode message in the last 12 digits of a balance amount
     const encodeMessageInBalance = (message: string): string => {
-        // Take only first 4 characters to fit in 12 digits
-        const truncatedMessage = message.slice(0, 4);
-        const truncatedCodes = Array.from(truncatedMessage).map(char => char.charCodeAt(0).toString().padStart(3, '0'));
+        try {
+            // Take only first 4 characters to fit in 12 digits
+            const truncatedMessage = message.slice(0, 4);
 
-        // Combine into 12-digit string
-        const encodedDigits = truncatedCodes.join('').padEnd(12, '0');
+            // Convert characters to ASCII codes and then to 3-digit numeric strings
+            const asciiCodes = Array.from(truncatedMessage).map(char => {
+                const code = char.charCodeAt(0);
+                // Ensure valid ASCII range
+                if (code < 0 || code > 127) {
+                    return '000'; // Invalid character becomes 000
+                }
+                return code.toString().padStart(3, '0');
+            });
 
-        // Create a balance amount with these last 12 digits
-        const baseAmount = '1000000000000000000'; // 1 ETH in wei
-        const last12Digits = encodedDigits;
-        const fullAmount = baseAmount.slice(0, -12) + last12Digits;
+            // Combine into 12-digit string
+            const encodedDigits = asciiCodes.join('').padEnd(12, '0');
 
-        return fullAmount;
+            // Create a balance amount with these last 12 digits
+            const baseAmount = '1000000000000'; // 1 trillion wei (much smaller than 1 ETH)
+            const last12Digits = encodedDigits;
+            const fullAmount = baseAmount.slice(0, -12) + last12Digits;
+
+            return fullAmount;
+        } catch (error) {
+            console.error('Error encoding message:', error);
+            return '1000000000000'; // Return base amount on error
+        }
     };
 
     // Decode message from balance amount
@@ -50,19 +64,37 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
         // Extract last 12 digits
         const last12Digits = balance.slice(-12);
 
-        // Split into groups of 3 digits
-        const asciiCodes = [];
-        for (let i = 0; i < 12; i += 3) {
-            const code = parseInt(last12Digits.slice(i, i + 3));
-            if (code > 0 && code < 128) { // Valid ASCII range
-                asciiCodes.push(code);
+        // Check if this is a concatenated message (has sequence info)
+        const sequence = parseInt(last12Digits.slice(0, 3));
+        const total = parseInt(last12Digits.slice(3, 6));
+
+        if (sequence > 0 && total > 0 && sequence <= total) {
+            // This is a concatenated message chunk
+            const messagePart = last12Digits.slice(6, 12);
+            const asciiCodes = [];
+            for (let i = 0; i < 6; i += 3) {
+                const code = parseInt(messagePart.slice(i, i + 3));
+                if (code > 0 && code < 128) {
+                    asciiCodes.push(code);
+                }
             }
+            const chunk = asciiCodes.map(code => String.fromCharCode(code)).join('');
+            return `[${sequence}/${total}] ${chunk}`;
+        } else {
+            // Regular single message
+            const asciiCodes = [];
+            for (let i = 0; i < 12; i += 3) {
+                const code = parseInt(last12Digits.slice(i, i + 3));
+                if (code > 0 && code < 128) { // Valid ASCII range
+                    asciiCodes.push(code);
+                }
+            }
+
+            // Convert ASCII codes back to string
+            const message = asciiCodes.map(code => String.fromCharCode(code)).join('');
+
+            return message;
         }
-
-        // Convert ASCII codes back to string
-        const message = asciiCodes.map(code => String.fromCharCode(code)).join('');
-
-        return message;
     };
 
     // Open modal for sending message
@@ -237,19 +269,91 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
                 Stealth Message Checker
             </h2>
 
-            {/* User Role Selector */}
+            {/* User Info */}
             <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    You are currently: <span className="font-bold text-blue-800">{currentUser === 'bob' ? 'Bob' : 'Alice'}</span>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                    You are: <span className="font-bold text-blue-800">Bob</span>
                 </label>
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-gray-800">
                     You can only send messages to your own addresses (you own the private keys)
                 </p>
             </div>
 
-            <p className="text-sm text-gray-700 mb-6">
+            <p className="text-sm text-gray-900 mb-6">
                 Checking balances on Base Sepolia network (https://base-sepolia.blockscout.com)
             </p>
+
+            {/* Quick Message Composer */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">✍️ Quick Message Composer</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                            Message (max 20 characters)
+                        </label>
+                        <input
+                            type="text"
+                            value={messageText}
+                            onChange={(e) => setMessageText(e.target.value)}
+                            placeholder="Enter your message"
+                            maxLength={20}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        />
+                        <p className="text-xs text-gray-700 mt-1">
+                            {messageText.length <= 4
+                                ? "Single message (4 characters or less)"
+                                : `Concatenated message (${messageText.length} characters, ${Math.ceil(messageText.length / 4)} chunks)`
+                            }
+                        </p>
+                    </div>
+                    <div className="flex items-end">
+                        <button
+                            onClick={calculateMessageAmount}
+                            disabled={!messageText.trim()}
+                            className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Calculate Amount
+                        </button>
+                    </div>
+                </div>
+
+                {calculatedAmount && (
+                    <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                        <h4 className="font-medium text-green-800 mb-2">Amount to Send:</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm font-mono text-green-700">
+                                    <strong>Wei:</strong> {calculatedAmount}
+                                </p>
+                                <p className="text-sm text-green-600">
+                                    <strong>ETH:</strong> {(() => {
+                                        try {
+                                            if (!calculatedAmount || !/^\d+$/.test(calculatedAmount)) {
+                                                return "Invalid amount";
+                                            }
+                                            const weiBigInt = BigInt(calculatedAmount);
+                                            const ethBigInt = weiBigInt / BigInt(1e18);
+                                            const remainder = weiBigInt % BigInt(1e18);
+                                            const remainderStr = remainder.toString().padStart(18, '0');
+                                            return `${ethBigInt.toString()}.${remainderStr}`;
+                                        } catch (error) {
+                                            return "Conversion error";
+                                        }
+                                    })()} ETH
+                                </p>
+                            </div>
+                            <div className="flex items-center">
+                                <button
+                                    onClick={() => navigator.clipboard.writeText(calculatedAmount)}
+                                    className="px-3 py-1 bg-gray-500 text-white text-sm rounded-md hover:bg-gray-600"
+                                >
+                                    Copy Wei
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Check Balances Button */}
             <div className="mb-6">
@@ -261,7 +365,7 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
                     {isCheckingBalances ? 'Checking Balances...' : 'Check All Stealth Address Balances'}
                 </button>
                 {(!bobStealthSequence.length && !aliceStealthSequence.length) && (
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-gray-700 mt-2">
                         Generate stealth sequences first to check for messages
                     </p>
                 )}
@@ -277,7 +381,7 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
                     <input
                         type="text"
                         placeholder="Enter address to check (e.g., 0x855971f4c64cdd5b48c5a5bc00c18c2a843d95d5)"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                         id="manual-address"
                     />
                     <button
@@ -326,7 +430,7 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
                                                 <p className="text-xs text-green-600">
                                                     Balance: {item.balance} wei
                                                 </p>
-                                                <p className="text-xs text-gray-500 mt-1">
+                                                <p className="text-xs text-gray-700 mt-1">
                                                     Last 12 digits: {item.balance.slice(-12)}
                                                 </p>
                                             </div>
@@ -337,40 +441,82 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
                         </div>
                     )}
 
-                    {/* All Addresses */}
-                    <div className="mb-6">
-                        <h4 className="text-md font-semibold text-gray-800 mb-3">All Addresses:</h4>
+                    {/* Side by Side Layout */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Bob's Addresses */}
                         <div className="space-y-2">
-                            {balanceData.map((item, index) => (
-                                <div key={index} className={`p-3 rounded-lg ${item.message ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
+                            <h4 className="text-md font-semibold text-blue-800 mb-3">🔵 Bob's Stealth Addresses</h4>
+                            {balanceData.filter(item => item.type === 'bob').map((item, index) => (
+                                <div key={index} className={`p-3 rounded-lg ${item.message ? 'bg-green-50 border border-green-200' : 'bg-blue-50'
                                     }`}>
                                     <div className="flex justify-between items-center">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <span className={`text-sm font-bold ${item.message ? 'text-green-800' : 'text-blue-800'
                                                     }`}>
-                                                    {item.type === 'bob' ? 'Bob' : 'Alice'} Nonce {item.nonce}
+                                                    Nonce {item.nonce}
                                                 </span>
-                                                {!item.message && item.type === currentUser && (
+                                                {!item.message && item.type === 'bob' && (
                                                     <button
                                                         onClick={() => openSendModal(item.address, item.nonce, item.type)}
                                                         className="px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors"
                                                     >
-                                                        Send Message
+                                                        Send
                                                     </button>
                                                 )}
                                             </div>
-                                            <p className="font-mono text-xs text-gray-700 break-all">
+                                            <p className="font-mono text-xs text-gray-900 break-all">
                                                 {item.address}
                                             </p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-sm font-medium">
+                                            <p className="text-sm font-medium text-gray-900">
                                                 {item.balance === '0' ? '0 wei' : `${item.balance} wei`}
                                             </p>
                                             {item.message && (
                                                 <p className="text-xs text-green-600 mt-1">
-                                                    Message: "{item.message}"
+                                                    "{item.message}"
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Alice's Addresses */}
+                        <div className="space-y-2">
+                            <h4 className="text-md font-semibold text-pink-800 mb-3">🟣 Alice's Stealth Addresses</h4>
+                            {balanceData.filter(item => item.type === 'alice').map((item, index) => (
+                                <div key={index} className={`p-3 rounded-lg ${item.message ? 'bg-green-50 border border-green-200' : 'bg-pink-50'
+                                    }`}>
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className={`text-sm font-bold ${item.message ? 'text-green-800' : 'text-pink-800'
+                                                    }`}>
+                                                    Nonce {item.nonce}
+                                                </span>
+                                                {!item.message && item.type === 'alice' && (
+                                                    <button
+                                                        onClick={() => openSendModal(item.address, item.nonce, item.type)}
+                                                        className="px-3 py-1 bg-pink-600 text-white text-xs rounded-md hover:bg-pink-700 transition-colors"
+                                                    >
+                                                        Send
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <p className="font-mono text-xs text-gray-900 break-all">
+                                                {item.address}
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-medium text-gray-900">
+                                                {item.balance === '0' ? '0 wei' : `${item.balance} wei`}
+                                            </p>
+                                            {item.message && (
+                                                <p className="text-xs text-green-600 mt-1">
+                                                    "{item.message}"
                                                 </p>
                                             )}
                                         </div>
@@ -385,7 +531,7 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
             {/* How It Works */}
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                 <h4 className="font-medium text-blue-800 mb-2">How Stealth Messaging Works:</h4>
-                <ul className="text-sm text-blue-700 space-y-1">
+                <ul className="text-sm text-blue-900 space-y-1">
                     <li>• <strong>You send ETH</strong> to your own stealth addresses with encoded messages</li>
                     <li>• <strong>Last 12 digits</strong> of the balance amount encode the message (4 characters max)</li>
                     <li>• <strong>The other party checks</strong> your addresses sequentially until finding a zero balance</li>
@@ -405,7 +551,7 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-900 mb-2">
                                     Message (max 4 characters)
                                 </label>
                                 <input
@@ -414,7 +560,7 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
                                     onChange={(e) => setMessageText(e.target.value)}
                                     placeholder="Enter message"
                                     maxLength={4}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                                 />
                             </div>
 
@@ -435,7 +581,13 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
                                         {calculatedAmount} wei
                                     </p>
                                     <p className="text-sm text-green-600">
-                                        {(Number(calculatedAmount) / 1e18).toFixed(18)} ETH
+                                        {(() => {
+                                            const weiBigInt = BigInt(calculatedAmount);
+                                            const ethBigInt = weiBigInt / BigInt(1e18);
+                                            const remainder = weiBigInt % BigInt(1e18);
+                                            const remainderStr = remainder.toString().padStart(18, '0');
+                                            return `${ethBigInt.toString()}.${remainderStr}`;
+                                        })()} ETH
                                     </p>
                                 </div>
                             )}

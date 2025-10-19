@@ -42,7 +42,7 @@ export default function ECDHExchange({ generatedWallet, onSharedSecretGenerated,
 
             {/* Recipient Public Key Input */}
             <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                     Recipient Public Key
                 </label>
                 <div className="flex gap-2">
@@ -51,7 +51,7 @@ export default function ECDHExchange({ generatedWallet, onSharedSecretGenerated,
                         value={recipientPubKey}
                         onChange={(e) => setRecipientPubKey(e.target.value)}
                         placeholder="Enter recipient's public key (hex format)"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     />
                     <button
                         onClick={generateSharedSecret}
@@ -66,7 +66,7 @@ export default function ECDHExchange({ generatedWallet, onSharedSecretGenerated,
             {/* Your Public Key Display */}
             {generatedWallet && (
                 <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                    <h3 className="font-medium text-gray-700 mb-2">Your Public Key</h3>
+                    <h3 className="font-medium text-gray-900 mb-2">Your Public Key</h3>
                     <p className="font-mono text-sm break-all text-blue-800">
                         0x{Array.from(generatedWallet.publicKey).map(b => b.toString(16).padStart(2, '0')).join('')}
                     </p>
@@ -85,7 +85,7 @@ export default function ECDHExchange({ generatedWallet, onSharedSecretGenerated,
                     <h3 className="text-lg font-semibold text-gray-800">Shared Secret</h3>
 
                     <div className="p-4 bg-green-50 rounded-lg">
-                        <h4 className="font-medium text-gray-700 mb-2">Shared Secret</h4>
+                        <h4 className="font-medium text-gray-900 mb-2">Shared Secret</h4>
                         <p className="font-mono text-sm break-all text-green-800">
                             0x{Array.from(sharedSecret.secret).map(b => b.toString(16).padStart(2, '0')).join('')}
                         </p>

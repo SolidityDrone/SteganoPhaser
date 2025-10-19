@@ -15,7 +15,6 @@ export default function Home() {
   const [recipientPubKey, setRecipientPubKey] = useState<string>('');
   const [bobStealthSequence, setBobStealthSequence] = useState<Array<{ nonce: number; address: string }>>([]);
   const [aliceStealthSequence, setAliceStealthSequence] = useState<Array<{ nonce: number; address: string }>>([]);
-  const [currentUser, setCurrentUser] = useState<'bob' | 'alice'>('bob');
 
   const handleWalletGenerated = (wallet: StealthKeyPair) => {
     setGeneratedWallet(wallet);
@@ -40,33 +39,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-center mb-4 text-gray-800">
+        <h1 className="text-3xl font-bold text-center mb-8 text-gray-900">
           Steganographic Wallet Generator
         </h1>
-
-        {/* User Role Selector */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-lg p-1 shadow-sm">
-            <button
-              onClick={() => setCurrentUser('bob')}
-              className={`px-4 py-2 rounded-md transition-colors ${currentUser === 'bob'
-                ? 'bg-blue-500 text-white'
-                : 'text-gray-600 hover:text-gray-800'
-                }`}
-            >
-              I am Bob
-            </button>
-            <button
-              onClick={() => setCurrentUser('alice')}
-              className={`px-4 py-2 rounded-md transition-colors ${currentUser === 'alice'
-                ? 'bg-pink-500 text-white'
-                : 'text-gray-600 hover:text-gray-800'
-                }`}
-            >
-              I am Alice
-            </button>
-          </div>
-        </div>
 
         {/* Tab Navigation */}
         <div className="flex justify-center mb-8">
@@ -75,7 +50,7 @@ export default function Home() {
               onClick={() => setActiveTab('signature')}
               className={`px-6 py-2 rounded-md transition-colors ${activeTab === 'signature'
                 ? 'bg-blue-500 text-white'
-                : 'text-gray-600 hover:text-gray-800'
+                : 'text-gray-700 hover:text-gray-900'
                 }`}
             >
               Signature Wallet
@@ -84,7 +59,7 @@ export default function Home() {
               onClick={() => setActiveTab('ecdh')}
               className={`px-6 py-2 rounded-md transition-colors ${activeTab === 'ecdh'
                 ? 'bg-blue-500 text-white'
-                : 'text-gray-600 hover:text-gray-800'
+                : 'text-gray-700 hover:text-gray-900'
                 }`}
             >
               ECDH Exchange
@@ -93,7 +68,7 @@ export default function Home() {
               onClick={() => setActiveTab('stealth')}
               className={`px-6 py-2 rounded-md transition-colors ${activeTab === 'stealth'
                 ? 'bg-blue-500 text-white'
-                : 'text-gray-600 hover:text-gray-800'
+                : 'text-gray-700 hover:text-gray-900'
                 }`}
             >
               Stealth Sequences
@@ -102,7 +77,7 @@ export default function Home() {
               onClick={() => setActiveTab('messages')}
               className={`px-6 py-2 rounded-md transition-colors ${activeTab === 'messages'
                 ? 'bg-blue-500 text-white'
-                : 'text-gray-600 hover:text-gray-800'
+                : 'text-gray-700 hover:text-gray-900'
                 }`}
             >
               Check Messages
@@ -111,7 +86,7 @@ export default function Home() {
               onClick={() => setActiveTab('calculator')}
               className={`px-6 py-2 rounded-md transition-colors ${activeTab === 'calculator'
                 ? 'bg-blue-500 text-white'
-                : 'text-gray-600 hover:text-gray-800'
+                : 'text-gray-700 hover:text-gray-900'
                 }`}
             >
               Message Calculator
@@ -146,7 +121,7 @@ export default function Home() {
             <StealthMessages
               bobStealthSequence={bobStealthSequence}
               aliceStealthSequence={aliceStealthSequence}
-              currentUser={currentUser}
+              currentUser="bob"
             />
           )}
 
