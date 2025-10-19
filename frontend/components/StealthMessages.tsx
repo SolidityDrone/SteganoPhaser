@@ -1,12 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount, useSendTransaction } from 'wagmi';
+import { StealthCrypto, StealthKeyPair, SharedSecret } from '../crypto';
 
 interface StealthMessagesProps {
     bobStealthSequence: Array<{ nonce: number; address: string }>;
     aliceStealthSequence: Array<{ nonce: number; address: string }>;
     currentUser: 'bob' | 'alice';
+    generatedWallet?: StealthKeyPair;
+    sharedSecret?: SharedSecret;
+    recipientPubKey?: string;
 }
 
 interface BalanceData {
@@ -17,7 +21,7 @@ interface BalanceData {
     type: 'bob' | 'alice';
 }
 
-export default function StealthMessages({ bobStealthSequence, aliceStealthSequence, currentUser }: StealthMessagesProps) {
+export default function StealthMessages({ bobStealthSequence, aliceStealthSequence, currentUser, generatedWallet, sharedSecret, recipientPubKey }: StealthMessagesProps) {
     const [balanceData, setBalanceData] = useState<BalanceData[]>([]);
     const [isCheckingBalances, setIsCheckingBalances] = useState(false);
     const [showModal, setShowModal] = useState(false);
@@ -25,8 +29,65 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
     const [messageText, setMessageText] = useState('');
     const [calculatedAmount, setCalculatedAmount] = useState('');
 
+    // Auto-generated sequences state
+    const [autoBobSequence, setAutoBobSequence] = useState<Array<{ nonce: number; address: string }>>([]);
+    const [autoAliceSequence, setAutoAliceSequence] = useState<Array<{ nonce: number; address: string }>>([]);
+    const [isAutoGenerating, setIsAutoGenerating] = useState(false);
+
     const { address, isConnected } = useAccount();
     const { sendTransaction, isPending: isSending } = useSendTransaction();
+
+    // Auto-generate sequences if not provided
+    const autoGenerateSequences = async () => {
+        if (!generatedWallet || !sharedSecret || !recipientPubKey) {
+            console.log('Missing required data for auto-generation');
+            return;
+        }
+
+        setIsAutoGenerating(true);
+        try {
+            // Generate 100 nonces for each sequence
+            const sequenceCount = 100;
+
+            // Generate Bob's sequence
+            const bobSequence = [];
+            for (let i = 0; i < sequenceCount; i++) {
+                const stealthAddress = StealthCrypto.generateStealthAddress(
+                    sharedSecret,
+                    generatedWallet.publicKey,
+                    i
+                );
+                bobSequence.push({ nonce: i, address: stealthAddress });
+            }
+            setAutoBobSequence(bobSequence);
+
+            // Generate Alice's sequence
+            const aliceSequence = [];
+            for (let i = 0; i < sequenceCount; i++) {
+                const stealthAddress = StealthCrypto.generateStealthAddress(
+                    sharedSecret,
+                    recipientPubKey,
+                    i
+                );
+                aliceSequence.push({ nonce: i, address: stealthAddress });
+            }
+            setAutoAliceSequence(aliceSequence);
+
+            console.log(`Auto-generated ${sequenceCount} stealth addresses for both Bob and Alice`);
+        } catch (error) {
+            console.error('Error auto-generating sequences:', error);
+        } finally {
+            setIsAutoGenerating(false);
+        }
+    };
+
+    // Auto-generate sequences when component mounts if we have the required data
+    useEffect(() => {
+        if (generatedWallet && sharedSecret && recipientPubKey &&
+            bobStealthSequence.length === 0 && aliceStealthSequence.length === 0) {
+            autoGenerateSequences();
+        }
+    }, [generatedWallet, sharedSecret, recipientPubKey, bobStealthSequence.length, aliceStealthSequence.length]);
 
     // Encode message in the last 12 digits of a balance amount
     const encodeMessageInBalance = (message: string): string => {
@@ -47,12 +108,9 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
             // Combine into 12-digit string
             const encodedDigits = asciiCodes.join('').padEnd(12, '0');
 
-            // Create a balance amount with these last 12 digits
-            const baseAmount = '1000000000000'; // 1 trillion wei (much smaller than 1 ETH)
-            const last12Digits = encodedDigits;
-            const fullAmount = baseAmount.slice(0, -12) + last12Digits;
-
-            return fullAmount;
+            // Use the encoded digits directly as the wei amount
+            // This ensures the amount is small (12 digits max = 999,999,999,999 wei = ~0.000001 ETH)
+            return encodedDigits;
         } catch (error) {
             console.error('Error encoding message:', error);
             return '1000000000000'; // Return base amount on error
@@ -135,14 +193,18 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
 
     // Check balances for all stealth addresses using Base Sepolia
     const checkStealthBalances = async () => {
-        if (!bobStealthSequence.length && !aliceStealthSequence.length) return;
+        // Use auto-generated sequences if provided sequences are empty
+        const bobSequence = bobStealthSequence.length > 0 ? bobStealthSequence : autoBobSequence;
+        const aliceSequence = aliceStealthSequence.length > 0 ? aliceStealthSequence : autoAliceSequence;
+
+        if (!bobSequence.length && !aliceSequence.length) return;
 
         setIsCheckingBalances(true);
         const balanceResults: BalanceData[] = [];
 
         // Check Bob's sequence
         console.log('Checking Bob\'s stealth addresses...');
-        for (const bobAddress of bobStealthSequence) {
+        for (const bobAddress of bobSequence) {
             try {
                 const balance = await getBalanceFromBaseSepolia(bobAddress.address);
                 const decodedMessage = balance !== '0' ? decodeMessageFromBalance(balance) : undefined;
@@ -174,7 +236,7 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
 
         // Check Alice's sequence
         console.log('Checking Alice\'s stealth addresses...');
-        for (const aliceAddress of aliceStealthSequence) {
+        for (const aliceAddress of aliceSequence) {
             try {
                 const balance = await getBalanceFromBaseSepolia(aliceAddress.address);
                 const decodedMessage = balance !== '0' ? decodeMessageFromBalance(balance) : undefined;
@@ -264,31 +326,28 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900">
+        <div className="card cyber-border ">
+            <h2 className="text-2xl font-bold mb-6 text-cyber cyber-glow ">
                 Stealth Message Checker
             </h2>
 
             {/* User Info */}
-            <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                    You are: <span className="font-bold text-blue-800">Bob</span>
+            <div className="mb-6 p-6 bg-gray-900 border-2 border-blue-500 rounded-lg cyber-border">
+                <label className="block text-sm font-medium text-cyber mb-3">
+                    You are: <span className="font-bold text-cyber cyber-glow">Bob</span>
                 </label>
-                <p className="text-xs text-gray-800">
+                <p className="text-xs text-secondary font-mono">
                     You can only send messages to your own addresses (you own the private keys)
                 </p>
             </div>
 
-            <p className="text-sm text-gray-900 mb-6">
-                Checking balances on Base Sepolia network (https://base-sepolia.blockscout.com)
-            </p>
 
             {/* Quick Message Composer */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">✍️ Quick Message Composer</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mb-6 p-6 bg-gray-900 border-2 border-yellow-500 rounded-lg cyber-border">
+                <h3 className="text-lg font-semibold text-cyber mb-4 cyber-glow">✍️ Quick Message Composer</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                        <label className="block text-sm font-medium text-cyber mb-3">
                             Message (max 20 characters)
                         </label>
                         <input
@@ -297,9 +356,9 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
                             onChange={(e) => setMessageText(e.target.value)}
                             placeholder="Enter your message"
                             maxLength={20}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                            className="w-full px-4 py-3 border-2 border-gray-600 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-400/20 bg-gray-900 text-white placeholder-gray-400 font-mono"
                         />
-                        <p className="text-xs text-gray-700 mt-1">
+                        <p className="text-xs text-muted mt-2 font-mono">
                             {messageText.length <= 4
                                 ? "Single message (4 characters or less)"
                                 : `Concatenated message (${messageText.length} characters, ${Math.ceil(messageText.length / 4)} chunks)`
@@ -310,7 +369,7 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
                         <button
                             onClick={calculateMessageAmount}
                             disabled={!messageText.trim()}
-                            className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:from-blue-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed font-mono font-semibold transition-all hover:shadow-lg hover:shadow-blue-500/25"
                         >
                             Calculate Amount
                         </button>
@@ -359,14 +418,19 @@ export default function StealthMessages({ bobStealthSequence, aliceStealthSequen
             <div className="mb-6">
                 <button
                     onClick={checkStealthBalances}
-                    disabled={!bobStealthSequence.length && !aliceStealthSequence.length || isCheckingBalances}
-                    className="px-6 py-3 bg-orange-500 text-white rounded-md hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isCheckingBalances}
+                    className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:from-orange-600 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed font-mono font-semibold transition-all hover:shadow-lg hover:shadow-orange-500/25"
                 >
                     {isCheckingBalances ? 'Checking Balances...' : 'Check All Stealth Address Balances'}
                 </button>
-                {(!bobStealthSequence.length && !aliceStealthSequence.length) && (
-                    <p className="text-xs text-gray-700 mt-2">
-                        Generate stealth sequences first to check for messages
+                {(!bobStealthSequence.length && !aliceStealthSequence.length && !autoBobSequence.length && !autoAliceSequence.length) && (
+                    <p className="text-xs text-yellow-400 mt-2 font-mono">
+                        ⚠️ No stealth sequences available. {isAutoGenerating ? 'Auto-generating sequences...' : 'Complete the previous steps to auto-generate sequences.'}
+                    </p>
+                )}
+                {(autoBobSequence.length > 0 || autoAliceSequence.length > 0) && (
+                    <p className="text-xs text-green-400 mt-2 font-mono">
+                        ✅ Using auto-generated sequences ({autoBobSequence.length} Bob, {autoAliceSequence.length} Alice addresses)
                     </p>
                 )}
             </div>

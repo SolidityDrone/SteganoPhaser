@@ -18,7 +18,7 @@ export default function StealthSequences({
 }: StealthSequencesProps) {
     const [bobStealthSequence, setBobStealthSequence] = useState<Array<{ nonce: number; address: string }>>([]);
     const [aliceStealthSequence, setAliceStealthSequence] = useState<Array<{ nonce: number; address: string }>>([]);
-    const [sequenceCount, setSequenceCount] = useState<number>(5);
+    const [sequenceCount] = useState<number>(100);
 
     // Generate stealth address sequences for both Bob and Alice
     const generateStealthSequences = () => {
@@ -57,24 +57,16 @@ export default function StealthSequences({
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+        <div className="card cyber-border">
+            <h2 className="text-2xl font-semibold mb-6 text-cyber cyber-glow">
                 Stealth Address Sequences
             </h2>
 
-            {/* Sequence Count Input */}
-            <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                    Number of Addresses to Generate
-                </label>
-                <input
-                    type="number"
-                    value={sequenceCount}
-                    onChange={(e) => setSequenceCount(parseInt(e.target.value) || 5)}
-                    min="1"
-                    max="20"
-                    className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                />
+            {/* Sequence Info */}
+            <div className="mb-6 p-4 bg-gray-900 border-2 border-blue-500 rounded-lg cyber-border">
+                <p className="text-sm text-cyber font-mono">
+                    Generating <strong>100 stealth addresses</strong> for both Bob and Alice
+                </p>
             </div>
 
             {/* Generate Sequences Button */}
@@ -82,71 +74,78 @@ export default function StealthSequences({
                 <button
                     onClick={generateStealthSequences}
                     disabled={!sharedSecret || !generatedWallet || !recipientPubKey}
-                    className="px-6 py-3 bg-purple-500 text-white rounded-md hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed font-mono font-semibold transition-all hover:shadow-lg hover:shadow-purple-500/25"
                 >
                     Generate Stealth Sequences
                 </button>
                 {(!sharedSecret || !generatedWallet || !recipientPubKey) && (
-                    <p className="text-xs text-gray-700 mt-2">
+                    <p className="text-xs text-muted mt-2 font-mono">
                         Complete the ECDH Exchange first to generate stealth sequences
                     </p>
                 )}
             </div>
 
-            {/* Bob's Stealth Sequence */}
-            {bobStealthSequence.length > 0 && (
+            {/* Stealth Sequences - Side by Side Layout */}
+            {(bobStealthSequence.length > 0 || aliceStealthSequence.length > 0) && (
                 <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Bob's Stealth Addresses</h3>
-                    <div className="space-y-2">
-                        {bobStealthSequence.map((item, index) => (
-                            <div key={index} className="p-3 bg-blue-50 rounded-lg">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm font-medium text-blue-800">Nonce {item.nonce}</span>
-                                    <button
-                                        onClick={() => navigator.clipboard.writeText(item.address)}
-                                        className="text-xs text-blue-600 hover:text-blue-800 underline"
-                                    >
-                                        Copy
-                                    </button>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Bob's Stealth Sequence - Left Side */}
+                        {bobStealthSequence.length > 0 && (
+                            <div>
+                                <h3 className="text-lg font-semibold text-cyber mb-4 cyber-glow">Bob's Stealth Addresses</h3>
+                                <div className="space-y-3 max-h-96 overflow-y-auto">
+                                    {bobStealthSequence.map((item, index) => (
+                                        <div key={index} className="p-4 bg-gray-900 border-2 border-blue-500 rounded-lg cyber-border">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm font-medium text-cyber font-mono">Nonce {item.nonce}</span>
+                                                <button
+                                                    onClick={() => navigator.clipboard.writeText(item.address)}
+                                                    className="text-xs text-cyber hover:text-green-300 underline font-mono transition-colors"
+                                                >
+                                                    Copy
+                                                </button>
+                                            </div>
+                                            <p className="font-mono text-xs break-all text-green-400 bg-black p-3 rounded border border-blue-500 mt-2">
+                                                {item.address}
+                                            </p>
+                                        </div>
+                                    ))}
                                 </div>
-                                <p className="font-mono text-xs break-all text-blue-700 mt-1">
-                                    {item.address}
-                                </p>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+                        )}
 
-            {/* Alice's Stealth Sequence */}
-            {aliceStealthSequence.length > 0 && (
-                <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Alice's Stealth Addresses</h3>
-                    <div className="space-y-2">
-                        {aliceStealthSequence.map((item, index) => (
-                            <div key={index} className="p-3 bg-green-50 rounded-lg">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm font-medium text-green-800">Nonce {item.nonce}</span>
-                                    <button
-                                        onClick={() => navigator.clipboard.writeText(item.address)}
-                                        className="text-xs text-green-600 hover:text-green-800 underline"
-                                    >
-                                        Copy
-                                    </button>
+                        {/* Alice's Stealth Sequence - Right Side */}
+                        {aliceStealthSequence.length > 0 && (
+                            <div>
+                                <h3 className="text-lg font-semibold text-cyber mb-4 cyber-glow">Alice's Stealth Addresses</h3>
+                                <div className="space-y-3 max-h-96 overflow-y-auto">
+                                    {aliceStealthSequence.map((item, index) => (
+                                        <div key={index} className="p-4 bg-gray-900 border-2 border-green-500 rounded-lg cyber-border">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm font-medium text-cyber font-mono">Nonce {item.nonce}</span>
+                                                <button
+                                                    onClick={() => navigator.clipboard.writeText(item.address)}
+                                                    className="text-xs text-cyber hover:text-green-300 underline font-mono transition-colors"
+                                                >
+                                                    Copy
+                                                </button>
+                                            </div>
+                                            <p className="font-mono text-xs break-all text-green-400 bg-black p-3 rounded border border-green-500 mt-2">
+                                                {item.address}
+                                            </p>
+                                        </div>
+                                    ))}
                                 </div>
-                                <p className="font-mono text-xs break-all text-green-700 mt-1">
-                                    {item.address}
-                                </p>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </div>
             )}
 
             {/* Explanation */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium text-gray-800 mb-2">How It Works:</h4>
-                <ul className="text-sm text-gray-900 space-y-1">
+            <div className="mt-6 p-6 bg-gray-900 border-2 border-yellow-500 rounded-lg cyber-border">
+                <h4 className="font-medium text-cyber mb-3 cyber-glow">How It Works:</h4>
+                <ul className="text-sm text-yellow-400 space-y-2 font-mono">
                     <li>• <strong>Bob's addresses:</strong> Generated using shared secret + Bob's public key + nonce</li>
                     <li>• <strong>Alice's addresses:</strong> Generated using shared secret + Alice's public key + nonce</li>
                     <li>• <strong>Both parties</strong> can compute each other's stealth addresses</li>

@@ -89,31 +89,31 @@ export default function ECDHExchange({ generatedWallet, onSharedSecretGenerated,
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+        <div className="card cyber-border">
+            <h2 className="text-2xl font-semibold mb-6 text-cyber cyber-glow">
                 ECDH Key Exchange
             </h2>
 
             {/* Input Type Selection */}
-            <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+            <div className="mb-6">
+                <label className="block text-sm font-medium text-cyber mb-3">
                     Input Method
                 </label>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                     <button
                         onClick={() => setInputType('pubkey')}
-                        className={`px-4 py-2 rounded-md transition-colors ${inputType === 'pubkey'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        className={`px-6 py-3 rounded-md transition-all font-mono ${inputType === 'pubkey'
+                            ? 'btn-primary'
+                            : 'btn-secondary'
                             }`}
                     >
                         Public Key
                     </button>
                     <button
                         onClick={() => setInputType('ens')}
-                        className={`px-4 py-2 rounded-md transition-colors ${inputType === 'ens'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        className={`px-6 py-3 rounded-md transition-all font-mono ${inputType === 'ens'
+                            ? 'btn-primary'
+                            : 'btn-secondary'
                             }`}
                     >
                         ENS Name
@@ -125,21 +125,21 @@ export default function ECDHExchange({ generatedWallet, onSharedSecretGenerated,
             <div className="mb-6">
                 {inputType === 'pubkey' ? (
                     <>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                        <label className="block text-sm font-medium text-cyber mb-3">
                             Recipient Public Key
                         </label>
-                        <div className="flex gap-2">
+                        <div className="flex gap-3">
                             <input
                                 type="text"
                                 value={recipientPubKey}
                                 onChange={(e) => setRecipientPubKey(e.target.value)}
                                 placeholder="Enter recipient's public key (hex format)"
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                                className="flex-1 px-4 py-3 border-2 border-gray-600 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-400/20 bg-gray-900 text-white placeholder-gray-400 font-mono"
                             />
                             <button
                                 onClick={generateSharedSecret}
                                 disabled={!generatedWallet || !recipientPubKey}
-                                className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed font-mono font-semibold transition-all hover:shadow-lg hover:shadow-purple-500/25"
                             >
                                 Generate Shared Secret
                             </button>
@@ -147,22 +147,22 @@ export default function ECDHExchange({ generatedWallet, onSharedSecretGenerated,
                     </>
                 ) : (
                     <>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">
+                        <label className="block text-sm font-medium text-cyber mb-3">
                             ENS Name
                         </label>
-                        <div className="space-y-2">
-                            <div className="flex gap-2">
+                        <div className="space-y-3">
+                            <div className="flex gap-3">
                                 <input
                                     type="text"
                                     value={ensName}
                                     onChange={(e) => setEnsName(e.target.value)}
                                     placeholder="Enter ENS name (e.g., alice.eth)"
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                                    className="flex-1 px-4 py-3 border-2 border-gray-600 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-400/20 bg-gray-900 text-white placeholder-gray-400 font-mono"
                                 />
                                 <button
                                     onClick={resolveENSName}
                                     disabled={!ensName.trim() || isResolving}
-                                    className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed font-mono font-semibold transition-all hover:shadow-lg hover:shadow-green-500/25"
                                 >
                                     {isResolving ? 'Resolving...' : 'Resolve ENS'}
                                 </button>
@@ -170,17 +170,17 @@ export default function ECDHExchange({ generatedWallet, onSharedSecretGenerated,
                                     <button
                                         onClick={generateSharedSecret}
                                         disabled={!generatedWallet}
-                                        className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed font-mono font-semibold transition-all hover:shadow-lg hover:shadow-purple-500/25"
                                     >
                                         Generate Shared Secret
                                     </button>
                                 )}
                             </div>
                             {resolveError && (
-                                <p className="text-sm text-red-600">{resolveError}</p>
+                                <p className="text-sm text-red-400 font-mono">{resolveError}</p>
                             )}
                             {recipientPubKey && (
-                                <p className="text-sm text-green-600">
+                                <p className="text-sm text-green-400 font-mono">
                                     ✓ ENS resolved successfully!
                                 </p>
                             )}
@@ -191,14 +191,14 @@ export default function ECDHExchange({ generatedWallet, onSharedSecretGenerated,
 
             {/* Your Public Key Display */}
             {generatedWallet && (
-                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                    <h3 className="font-medium text-gray-900 mb-2">Your Public Key</h3>
-                    <p className="font-mono text-sm break-all text-blue-800">
+                <div className="mb-6 p-6 bg-gray-900 border-2 border-gray-700 rounded-lg cyber-border">
+                    <h3 className="font-medium text-cyber mb-3">Your Public Key</h3>
+                    <p className="font-mono text-sm break-all text-green-400 bg-black p-3 rounded border border-gray-600">
                         0x{Array.from(generatedWallet.publicKey).map(b => b.toString(16).padStart(2, '0')).join('')}
                     </p>
                     <button
                         onClick={() => navigator.clipboard.writeText('0x' + Array.from(generatedWallet.publicKey).map(b => b.toString(16).padStart(2, '0')).join(''))}
-                        className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                        className="mt-3 text-xs text-cyber hover:text-green-300 underline font-mono transition-colors"
                     >
                         Copy to clipboard
                     </button>
@@ -208,11 +208,11 @@ export default function ECDHExchange({ generatedWallet, onSharedSecretGenerated,
             {/* Shared Secret Display */}
             {sharedSecret && (
                 <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Shared Secret</h3>
+                    <h3 className="text-lg font-semibold text-cyber cyber-glow">Shared Secret</h3>
 
-                    <div className="p-4 bg-green-50 rounded-lg">
-                        <h4 className="font-medium text-gray-900 mb-2">Shared Secret</h4>
-                        <p className="font-mono text-sm break-all text-green-800">
+                    <div className="p-6 bg-gray-900 border-2 border-green-500 rounded-lg cyber-glow">
+                        <h4 className="font-medium text-cyber mb-3">Shared Secret</h4>
+                        <p className="font-mono text-sm break-all text-green-400 bg-black p-3 rounded border border-green-500">
                             0x{Array.from(sharedSecret.secret).map(b => b.toString(16).padStart(2, '0')).join('')}
                         </p>
                     </div>
@@ -220,9 +220,9 @@ export default function ECDHExchange({ generatedWallet, onSharedSecretGenerated,
             )}
 
             {/* Instructions */}
-            <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
-                <h4 className="font-medium text-yellow-800 mb-2">Instructions:</h4>
-                <ol className="text-sm text-yellow-700 space-y-1">
+            <div className="mt-6 p-6 bg-gray-900 border-2 border-yellow-500 rounded-lg cyber-border">
+                <h4 className="font-medium text-cyber mb-3 cyber-glow">Instructions:</h4>
+                <ol className="text-sm text-yellow-400 space-y-2 font-mono">
                     <li>1. First generate your wallet using the "Signature Wallet" tab</li>
                     <li>2. Share your public key with the recipient</li>
                     <li>3. Enter the recipient's public key above</li>

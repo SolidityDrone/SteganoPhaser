@@ -52,18 +52,18 @@ export default function SignatureWallet({ onWalletGenerated }: SignatureWalletPr
     }, [signatureData]);
 
     return (
-        <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+        <div className="card cyber-border">
+            <h2 className="text-2xl font-semibold mb-6 text-cyber cyber-glow">
                 Generate Wallet from Signature
             </h2>
-            <p className="text-sm text-gray-800 mb-6">
+            <p className="text-sm text-secondary mb-6 font-mono">
                 Sign the steganographic message to generate your embedded wallet
             </p>
 
             {/* Connection Status */}
-            <div className="mb-6 p-4 bg-gray-100 rounded-lg">
+            <div className="mb-6 p-6 bg-gray-900 border-2 border-gray-700 rounded-lg cyber-border">
                 <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-800">
+                    <p className="text-sm text-cyber font-mono">
                         Status: {isConnected ? `Connected as ${address}` : 'Not connected'}
                     </p>
                     <AppKitButton />
@@ -72,19 +72,19 @@ export default function SignatureWallet({ onWalletGenerated }: SignatureWalletPr
 
 
             {/* Fixed Message Display */}
-            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                <h3 className="font-semibold text-gray-800 mb-2">Message to Sign:</h3>
-                <p className="text-gray-900 font-mono text-sm break-all">
+            <div className="mb-6 p-6 bg-gray-900 border-2 border-blue-500 rounded-lg cyber-border">
+                <h3 className="font-semibold text-cyber mb-3 cyber-glow">Message to Sign:</h3>
+                <p className="text-green-400 font-mono text-sm break-all bg-black p-3 rounded border border-blue-500">
                     "{FIXED_MESSAGE}"
                 </p>
             </div>
 
             {/* Signature Section */}
             <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label className="block text-sm font-medium text-cyber mb-3">
                     Signature
                 </label>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                     <button
                         onClick={async () => {
                             if (!isConnected) {
@@ -102,15 +102,15 @@ export default function SignatureWallet({ onWalletGenerated }: SignatureWalletPr
                             }
                         }}
                         disabled={!isConnected || isSigning}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:from-blue-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed font-mono font-semibold transition-all hover:shadow-lg hover:shadow-blue-500/25"
                     >
                         {isSigning ? 'Signing...' : 'Sign Message'}
                     </button>
                 </div>
                 {signature && (
-                    <div className="mt-2 p-3 bg-green-50 rounded-md">
-                        <p className="text-sm text-gray-800 mb-1">Signature:</p>
-                        <p className="font-mono text-xs break-all text-green-800">{signature}</p>
+                    <div className="mt-3 p-4 bg-gray-900 border-2 border-green-500 rounded-lg cyber-border">
+                        <p className="text-sm text-cyber mb-2 font-mono">Signature:</p>
+                        <p className="font-mono text-xs break-all text-green-400 bg-black p-3 rounded border border-green-500">{signature}</p>
                     </div>
                 )}
             </div>
@@ -120,12 +120,12 @@ export default function SignatureWallet({ onWalletGenerated }: SignatureWalletPr
                 <button
                     onClick={generateWalletFromSignature}
                     disabled={!signature || isGenerating}
-                    className="px-6 py-3 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed font-mono font-semibold transition-all hover:shadow-lg hover:shadow-green-500/25"
                 >
                     {isGenerating ? 'Generating...' : 'Generate Wallet from Signature'}
                 </button>
                 {!signature && (
-                    <p className="text-xs text-gray-700 mt-2">
+                    <p className="text-xs text-muted mt-2 font-mono">
                         Please sign the message first to generate your wallet
                     </p>
                 )}
@@ -134,19 +134,19 @@ export default function SignatureWallet({ onWalletGenerated }: SignatureWalletPr
             {/* Generated Wallet Display */}
             {generatedWallet && (
                 <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Generated Wallet</h3>
+                    <h3 className="text-lg font-semibold text-cyber cyber-glow">Generated Wallet</h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                            <h4 className="font-medium text-gray-900 mb-2">Address</h4>
-                            <p className="font-mono text-sm break-all text-gray-800">
+                        <div className="p-6 bg-gray-900 border-2 border-gray-700 rounded-lg cyber-border">
+                            <h4 className="font-medium text-cyber mb-3">Address</h4>
+                            <p className="font-mono text-sm break-all text-green-400 bg-black p-3 rounded border border-gray-600">
                                 {generatedWallet.address}
                             </p>
                         </div>
 
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                            <h4 className="font-medium text-gray-900 mb-2">Public Key</h4>
-                            <p className="font-mono text-xs break-all text-gray-800">
+                        <div className="p-6 bg-gray-900 border-2 border-gray-700 rounded-lg cyber-border">
+                            <h4 className="font-medium text-cyber mb-3">Public Key</h4>
+                            <p className="font-mono text-xs break-all text-green-400 bg-black p-3 rounded border border-gray-600">
                                 0x{Array.from(generatedWallet.publicKey).map(b => b.toString(16).padStart(2, '0')).join('')}
                             </p>
                         </div>

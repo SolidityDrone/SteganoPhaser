@@ -37,56 +37,56 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
+    <div className="min-h-screen bg-black cyber-grid">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-center mb-8 text-gray-900">
-          Steganographic Wallet Generator
+        <h1 className="text-4xl font-bold text-center mb-8 text-cyber cyber-glow bg-transparent">
+          SteganoPhaser - Steganographic Messaging System
         </h1>
 
         {/* Tab Navigation */}
         <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-lg p-1 shadow-sm">
+          <div className="card cyber-border p-1">
             <button
               onClick={() => setActiveTab('signature')}
-              className={`px-6 py-2 rounded-md transition-colors ${activeTab === 'signature'
-                ? 'bg-blue-500 text-white'
-                : 'text-gray-700 hover:text-gray-900'
+              className={`px-6 py-3 rounded-md transition-all font-mono ${activeTab === 'signature'
+                ? 'btn-primary'
+                : 'btn-secondary'
                 }`}
             >
               Signature Wallet
             </button>
             <button
               onClick={() => setActiveTab('ecdh')}
-              className={`px-6 py-2 rounded-md transition-colors ${activeTab === 'ecdh'
-                ? 'bg-blue-500 text-white'
-                : 'text-gray-700 hover:text-gray-900'
+              className={`px-6 py-3 rounded-md transition-all font-mono ${activeTab === 'ecdh'
+                ? 'btn-primary'
+                : 'btn-secondary'
                 }`}
             >
               ECDH Exchange
             </button>
             <button
               onClick={() => setActiveTab('stealth')}
-              className={`px-6 py-2 rounded-md transition-colors ${activeTab === 'stealth'
-                ? 'bg-blue-500 text-white'
-                : 'text-gray-700 hover:text-gray-900'
+              className={`px-6 py-3 rounded-md transition-all font-mono ${activeTab === 'stealth'
+                ? 'btn-primary'
+                : 'btn-secondary'
                 }`}
             >
               Stealth Sequences
             </button>
             <button
               onClick={() => setActiveTab('messages')}
-              className={`px-6 py-2 rounded-md transition-colors ${activeTab === 'messages'
-                ? 'bg-blue-500 text-white'
-                : 'text-gray-700 hover:text-gray-900'
+              className={`px-6 py-3 rounded-md transition-all font-mono ${activeTab === 'messages'
+                ? 'btn-primary'
+                : 'btn-secondary'
                 }`}
             >
               Check Messages
             </button>
             <button
               onClick={() => setActiveTab('calculator')}
-              className={`px-6 py-2 rounded-md transition-colors ${activeTab === 'calculator'
-                ? 'bg-blue-500 text-white'
-                : 'text-gray-700 hover:text-gray-900'
+              className={`px-6 py-3 rounded-md transition-all font-mono ${activeTab === 'calculator'
+                ? 'btn-primary'
+                : 'btn-secondary'
                 }`}
             >
               Message Calculator
@@ -122,6 +122,9 @@ export default function Home() {
               bobStealthSequence={bobStealthSequence}
               aliceStealthSequence={aliceStealthSequence}
               currentUser="bob"
+              generatedWallet={generatedWallet}
+              sharedSecret={sharedSecret}
+              recipientPubKey={recipientPubKey}
             />
           )}
 

@@ -28,12 +28,9 @@ export default function MessageCalculator() {
             // Combine into 12-digit string
             const encodedDigits = asciiCodes.join('').padEnd(12, '0');
 
-            // Create a balance amount with these last 12 digits
-            const baseAmount = '1000000000000'; // 1 trillion wei (much smaller than 1 ETH)
-            const last12Digits = encodedDigits;
-            const fullAmount = baseAmount.slice(0, -12) + last12Digits;
-
-            return fullAmount;
+            // Use the encoded digits directly as the wei amount
+            // This ensures the amount is small (12 digits max = 999,999,999,999 wei = ~0.000001 ETH)
+            return encodedDigits;
         } catch (error) {
             console.error('Error encoding message:', error);
             return '1000000000000'; // Return base amount on error
@@ -76,11 +73,8 @@ export default function MessageCalculator() {
 
             const encodedDigits = sequenceStr + totalStr + messageStr;
 
-            // Create a balance amount with these last 12 digits
-            const baseAmount = '1000000000000'; // 1 trillion wei
-            const fullAmount = baseAmount.slice(0, -12) + encodedDigits;
-
-            return fullAmount;
+            // Use the encoded digits directly as the wei amount
+            return encodedDigits;
         } catch (error) {
             console.error('Error encoding message chunk:', error);
             return '1000000000000'; // Return base amount on error
@@ -148,37 +142,37 @@ export default function MessageCalculator() {
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+        <div className="card cyber-border">
+            <h2 className="text-2xl font-semibold mb-6 text-cyber cyber-glow">
                 Message Calculator
             </h2>
-            <p className="text-sm text-gray-800 mb-6">
+            <p className="text-sm text-secondary mb-6 font-mono">
                 Calculate the exact ETH amount to send for encoding a message in the last 12 digits
             </p>
 
             {/* Message Input */}
             <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                    Message to Encode (max 4 characters)
+                <label className="block text-sm font-medium text-cyber mb-3">
+                    Message to Encode (max 20 characters)
                 </label>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                     <input
                         type="text"
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         placeholder="Enter message (e.g., Gang or HelloWorld)"
                         maxLength={20}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        className="flex-1 px-4 py-3 border-2 border-gray-600 rounded-lg focus:border-green-400 focus:ring-2 focus:ring-green-400/20 bg-gray-900 text-white placeholder-gray-400 font-mono"
                     />
                     <button
                         onClick={calculateAmount}
                         disabled={!message.trim()}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:from-blue-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed font-mono font-semibold transition-all hover:shadow-lg hover:shadow-blue-500/25"
                     >
                         Calculate
                     </button>
                 </div>
-                <p className="text-xs text-gray-700 mt-1">
+                <p className="text-xs text-muted mt-2 font-mono">
                     {message.length <= 4
                         ? "Single message encoding (4 characters or less)"
                         : `Concatenated message encoding (${message.length} characters, ${Math.ceil(message.length / 4)} chunks)`
@@ -189,51 +183,51 @@ export default function MessageCalculator() {
             {/* Results */}
             {encodedAmount && (
                 <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Encoding Results</h3>
+                    <h3 className="text-lg font-semibold text-cyber cyber-glow">Encoding Results</h3>
 
                     {/* Message Analysis */}
-                    <div className="p-4 bg-blue-50 rounded-lg">
-                        <h4 className="font-medium text-blue-800 mb-2">Message Analysis</h4>
-                        <div className="space-y-2">
-                            <p className="text-sm text-gray-900">
+                    <div className="p-6 bg-gray-900 border-2 border-blue-500 rounded-lg cyber-border">
+                        <h4 className="font-medium text-cyber mb-3 cyber-glow">Message Analysis</h4>
+                        <div className="space-y-3">
+                            <p className="text-sm text-green-400 font-mono">
                                 <strong>Message:</strong> "{message.slice(0, 4)}"
                             </p>
-                            <p className="text-sm text-gray-900">
+                            <p className="text-sm text-green-400 font-mono">
                                 <strong>ASCII Codes:</strong> {getAsciiCodes(message).join(', ')}
                             </p>
-                            <p className="text-sm text-gray-900">
+                            <p className="text-sm text-green-400 font-mono">
                                 <strong>Padded Codes:</strong> {getAsciiCodes(message).map(code => code.toString().padStart(3, '0')).join('')}
                             </p>
                         </div>
                     </div>
 
                     {/* Amount to Send */}
-                    <div className="p-4 bg-green-50 rounded-lg">
-                        <h4 className="font-medium text-green-800 mb-2">Amount to Send</h4>
-                        <div className="space-y-2">
-                            <p className="text-sm font-mono">
+                    <div className="p-6 bg-gray-900 border-2 border-green-500 rounded-lg cyber-border">
+                        <h4 className="font-medium text-cyber mb-3 cyber-glow">Amount to Send</h4>
+                        <div className="space-y-3">
+                            <p className="text-sm font-mono text-green-400">
                                 <strong>Wei:</strong> {encodedAmount}
                             </p>
-                            <p className="text-sm">
+                            <p className="text-sm text-green-400 font-mono">
                                 <strong>ETH:</strong> {weiToEth(encodedAmount)} ETH
                             </p>
-                            <p className="text-sm">
+                            <p className="text-sm text-green-400 font-mono">
                                 <strong>Last 12 digits:</strong> {last12Digits}
                             </p>
                         </div>
                     </div>
 
                     {/* Copy Functionality */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-3">
                         <button
                             onClick={() => navigator.clipboard.writeText(encodedAmount)}
-                            className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                            className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 font-mono font-semibold transition-all hover:shadow-lg hover:shadow-green-500/25"
                         >
                             Copy Wei Amount
                         </button>
                         <button
                             onClick={() => navigator.clipboard.writeText(weiToEth(encodedAmount))}
-                            className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                            className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 font-mono font-semibold transition-all hover:shadow-lg hover:shadow-green-500/25"
                         >
                             Copy ETH Amount
                         </button>
@@ -242,10 +236,10 @@ export default function MessageCalculator() {
             )}
 
             {/* Instructions */}
-            <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
-                <h4 className="font-medium text-yellow-800 mb-2">How to Use:</h4>
-                <ol className="text-sm text-yellow-700 space-y-1">
-                    <li>1. Enter your message (max 4 characters)</li>
+            <div className="mt-6 p-6 bg-gray-900 border-2 border-yellow-500 rounded-lg cyber-border">
+                <h4 className="font-medium text-cyber mb-3 cyber-glow">How to Use:</h4>
+                <ol className="text-sm text-yellow-400 space-y-2 font-mono">
+                    <li>1. Enter your message (max 20 characters)</li>
                     <li>2. Click "Calculate" to get the exact amount</li>
                     <li>3. Send that exact amount to a stealth address</li>
                     <li>4. The message will be encoded in the last 12 digits</li>

@@ -2,7 +2,7 @@
 
 **Steganographic Communication Protocol for Ethereum**
 
-A revolutionary steganographic messaging system that enables secure, private communication through Ethereum transactions using stealth addresses and encrypted message encoding.
+Last minute steganographic messaging system that enables secure, private communication through Ethereum transactions using stealth addresses and encrypted message encoding.
 
 ## 🎯 Project Overview
 
@@ -11,7 +11,6 @@ SteganoPhaser is a decentralized steganographic communication protocol that allo
 ## 🔒 Core Security Features
 
 ### **Stealth Address Technology**
-- **Zero Knowledge Communication**: Parties can communicate without revealing their identities
 - **Unlinkable Transactions**: Each message uses a unique stealth address, preventing transaction graph analysis
 - **Forward Secrecy**: Past communications remain secure even if current keys are compromised
 - **Multi-Source Messaging**: Messages can be sent from any stealth address, not just the original sender's address
